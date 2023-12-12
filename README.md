@@ -1,16 +1,9 @@
 # MAE-DFER: Efficient Masked Autoencoder for Self-supervised Dynamic Facial Expression Recognition (ACM MM 2023)
 
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/mae-dfer-efficient-masked-autoencoder-for/dynamic-facial-expression-recognition-on-dfew)](https://paperswithcode.com/sota/dynamic-facial-expression-recognition-on-dfew?p=mae-dfer-efficient-masked-autoencoder-for)<br>
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/mae-dfer-efficient-masked-autoencoder-for/dynamic-facial-expression-recognition-on)](https://paperswithcode.com/sota/dynamic-facial-expression-recognition-on?p=mae-dfer-efficient-masked-autoencoder-for)<br>
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/mae-dfer-efficient-masked-autoencoder-for/dynamic-facial-expression-recognition-on-mafw)](https://paperswithcode.com/sota/dynamic-facial-expression-recognition-on-mafw?p=mae-dfer-efficient-masked-autoencoder-for)<br>
-
-> [[arXiv]](https://arxiv.org/abs/2307.02227), [[ACM Digital Library]](https://dl.acm.org/doi/10.1145/3581783.3612365) <br>
-> [Licai Sun](https://scholar.google.com/citations?user=7qo_cTcAAAAJ&hl=en&oi=ao), [Zheng Lian](https://scholar.google.com/citations?user=S34nWz0AAAAJ&hl=en), [Bin Liu](https://scholar.google.com/citations?user=UEB_5QEAAAAJ&hl=en), and [Jianhua Tao](https://scholar.google.com/citations?user=781jbHMAAAAJ&hl=en)<br>
 > University of Chinese Academy of Sciences & Institute of Automation, Chinese Academy of Sciences & Tsinghua University<br>
 
 ## 📰 News
-**[2023.12.11]** We provide the fine-tuned models across five folds on DFEW. Please check them below.<br>
-**[2023.10.31]** We upload the [poster](figs/MAE-DFER%20Poster.pdf) of MAE-DFER for ACM MM 2023.<br>
+
 
 ## ✨ Overview
 
@@ -18,7 +11,7 @@ Dynamic Facial Expression Recognition (DFER) is facing **supervised dillema**. O
 
 <p align="center">
   <img src="figs/Overview.png" width=50%> <br>
-  Overview of our MAE-DFER.
+  Overview of our MAE-DFER+CA_Module.
 </p>
 
 Inspired by recent success of VideoMAE, MAE-DFER makes an early attempt to devise a novel masked autoencoder based self-supervised framework for DFER. It improves VideoMAE by developing an *efficient* LGI-Former as the encoder and introducing *joint* masked appearance and motion modeling. With these two core designs, MAE-DFER *largely* reduces the computational cost (about 38% FLOPs) during fine-tuning while having comparable or even *better* performance.
@@ -33,33 +26,9 @@ Extensive experiments on *six* DFER datasets show that our MAE-DFER *consistentl
 
 ## 🚀 Main Results
 
-### ✨ DFEW
-
-![Result_on_DFEW](figs/Result_on_DFEW.png)
-
 ### ✨ FERV39k
 
 ![Result_on_FERV39k](figs/Result_on_FERV39k.png)
-
-### ✨ MAFW
-
-![Result_on_MAFW](figs/Result_on_MAFW.png)
-
-
-## 👀 Visualization
-
-### ✨ Reconstruction 
-
-![Sample_with_showing_frame_difference](figs/Sample_with_showing_frame_difference.png)
-
-More samples without showing frame difference:
-![More_samples_without_showing_frame_difference](figs/More_samples_without_showing_frame_difference.png)
-
-
-### ✨ t-SNE on DFEW
-
-
-![t-SNE_on_DFEW](figs/t-SNE.png)
 
 
 
@@ -84,7 +53,7 @@ If some are missing, please refer to [environment.yml](environment.yml) for more
 
 ## ➡️ Data Preparation
 
-Please follow the files (e.g., [dfew.py](preprocess/dfew.py)) in [preprocess](preprocess) for data preparation.
+Please follow the files (e.g., [ferv39k.py](preprocess/ferv39k.py)) in [preprocess](preprocess) for data preparation.
 
 Specifically, you need to enerate annotations for dataloader ("<path_to_video> <video_class>" in annotations). 
 The annotation usually includes `train.csv`, `val.csv` and `test.csv`. The format of `*.csv` file is like:
@@ -97,12 +66,12 @@ dataset_root/video_3  label_3
 dataset_root/video_N  label_N
 ```
 
-An example of [train.csv](saved/data/dfew/org/split01/train.csv) of DFEW fold1 (fd1) is shown as follows:
+An example of [train.csv](saved/data/ferv39k/all_scenes/train.csv) is shown as follows:
 
 ```
-/mnt/data1/brain/AC/Dataset/DFEW/Clip/jpg_256/02522 5
-/mnt/data1/brain/AC/Dataset/DFEW/Clip/jpg_256/02536 5
-/mnt/data1/brain/AC/Dataset/DFEW/Clip/jpg_256/02578 6
+/home/drink36/Desktop/Dataset/39K/Face/Action/Happy/0267 0
+/home/drink36/Desktop/Dataset/39K/Face/Action/Happy/0316 0
+/home/drink36/Desktop/Dataset/39K/Face/Action/Happy/0090 0
 ```
 
 ## 📍Pre-trained Model
@@ -111,68 +80,25 @@ Download the model pre-trained on VoxCeleb2 from [this link](https://drive.googl
 
 ## ⤴️ Fine-tuning with pre-trained models
 
-- DFEW
+- FERV39K
 
     ```
-    sh scripts/dfew/finetune_local_global_attn_depth16_region_size2510_with_diff_target_164.sh
+    bash scripts/ferv39k/finetune_local_global_attn_depth16_region_size2510_with_diff_target_164.sh
     ```
   
-    <!--Our running log file can be found in [this file](logs/dfew.out). -->
-
-    The fine-tuned checkpoints and logs across five folds on DFEW are provided as follows: 
-    |  Fold    | UAR        | WR       |      Fine-tuned   Model            |
+    The fine-tuning checkpoints and logs for the four different methods of combining CA_Module and MAE-DFER on FERV39K are as follows:
+    | Method   | UAR        | WR       |      Fine-tuned   Model            |
     | :------: | :--------: | :------: | :-----------------------:          |
-    |  1       | 62.59      | 74.88    | [log](https://drive.google.com/file/d/1dYhJiEm56V1ZwJyj-rvC8TjdmrUMa0hO/view?usp=sharing) / [checkpoint](https://drive.google.com/file/d/1wRxwEZlrc3z3DqQ84xm_olmqRsj2obH3/view?usp=sharing) | 
-    |  2       | 61.96      | 72.49    | [log](https://drive.google.com/file/d/1pwXeaevtW0Xynr248HKvMx9eWxoxdY_n/view?usp=sharing) / [checkpoint](https://drive.google.com/file/d/1lY4L2PMVWuF93K6_VqEl7QrPoSK0SvaQ/view?usp=sharing) | 
-    |  3       | 64.00      | 74.91    | [log](https://drive.google.com/file/d/1c-3sC4menIzphya-y3iZ-lT-54Ls-9Yv/view?usp=sharing) / [checkpoint](https://drive.google.com/file/d/1FPKxBoGO3VXvLhcHY8iOPb9lQPi0_C1z/view?usp=sharing) | 
-    |  4       | 63.07      | 74.05    | [log](https://drive.google.com/file/d/1ZdadMpksJtUUTx6N2Fa6LI91qs7GV_S2/view?usp=sharing) / [checkpoint](https://drive.google.com/file/d/1yFDc1n8SaTEQWrVX8k65loQm45rfwQeO/view?usp=sharing) | 
-    |  5       | 65.42      | 75.81    | [log](https://drive.google.com/file/d/18KnsGWZlgN3CZvfjs1UjH4E2AqVltsda/view?usp=sharing) / [checkpoint](https://drive.google.com/file/d/1wmXO4M2kjpAOnvof8CmpJE6wUrxMUOgw/view?usp=sharing) |
-    |  Total   | 63.41      | 74.43    | - |
-
-- FERV39k
-
-    ```
-    sh scripts/ferv39k/finetune_local_global_attn_depth16_region_size2510_with_diff_target_164.sh
-    ```
-  
-    Our running log file can be found in [this file](logs/ferv39k.out).
-
-- MAFW
-
-    ```
-    sh scripts/mafw/finetune_local_global_attn_depth16_region_size2510_with_diff_target_164.sh
-    ```
-    
-    Our running log file can be found in [this file](logs/mafw.out).
-
+    | add      | 42.30      | 52.40    | [log](saved/model/finetuning/ferv39k/add/nohup.out) / [checkpoint](https://drive.google.com/drive/folders/1DLdfTPgA321QE9rwFNBBGNilN6GKwKrA?usp=drive_link) | 
+    | add(4*5) | 41.00      | 51.33    | [log](saved/model/finetuning/ferv39k/add(4*5*10)/nohup.out) / [checkpoint](https://drive.google.com/drive/folders/1lspg-3_DpYoJFqWUg3ZIzhUZUJ6c_SU5?usp=drive_link) | 
+    | add(pos) | 42.02      | 52.08    | [log](saved/model/finetuning/ferv39k/add(pos)/nohup.out) / [checkpoint](https://drive.google.com/drive/folders/1EWtMHXcJQ-0PsBeDoXMHueceaJLB4aEb?usp=drive_link) | 
+    | cat      | 42.20      | 52.30    | [log](saved/model/finetuning/ferv39k/cat/nohup.out) / [checkpoint](https://drive.google.com/drive/folders/1DLdfTPgA321QE9rwFNBBGNilN6GKwKrA?usp=drive_link) |
 
 ## ☎️ Contact 
 
-If you have any questions, please feel free to reach me out at `sunlicai2019@ia.ac.cn`.
+If you have any questions, please feel free to reach me out at `ooo910809@gmail.com`.
 
 ## 👍 Acknowledgements
 
-This project is built upon [VideoMAE](https://github.com/MCG-NJU/VideoMAE). Thanks for their great codebase.
-
-## ✏️ Citation
-
-If you think this project is helpful, please feel free to leave a star⭐️ and cite our paper:
-
-```
-@inproceedings{sun2023mae,
-    author = {Sun, Licai and Lian, Zheng and Liu, Bin and Tao, Jianhua},
-    title = {MAE-DFER: Efficient Masked Autoencoder for Self-Supervised Dynamic Facial Expression Recognition},
-    year = {2023},
-    booktitle = {Proceedings of the 31st ACM International Conference on Multimedia},
-    pages = {6110–6121}
-}
-
-@article{sun2023mae,
-  title={MAE-DFER: Efficient Masked Autoencoder for Self-supervised Dynamic Facial Expression Recognition},
-  author={Sun, Licai and Lian, Zheng and Liu, Bin and Tao, Jianhua},
-  journal={arXiv preprint arXiv:2307.02227},
-  year={2023}
-}
-```
-
+This project is built upon [VideoMAE](https://github.com/MCG-NJU/VideoMAE) and [MAE-DFER](https://github.com/sunlicai/MAE-DFER). Thanks for their great codebase.
 
