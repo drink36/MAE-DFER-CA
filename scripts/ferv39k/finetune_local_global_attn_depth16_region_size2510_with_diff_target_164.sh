@@ -26,9 +26,8 @@ do
     MODEL_PATH="./saved/model/pretraining/${pretrain_dataset}/${model_dir}/checkpoint-${ckpt}.pth"
 
     # batch_size can be adjusted according to number of GPUs
-    OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=3,4,5 python -m torch.distributed.launch --nproc_per_node=3 \
-        --master_port 12356 \
-        run_class_finetuning.py \
+    OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0 python3 run_class_finetuning.py \
+        --eval \
         --model vit_base_dim512_no_depth_patch16_${input_size} \
         --depth 16 \
         --data_set FERV39k \
@@ -37,7 +36,7 @@ do
         --finetune ${MODEL_PATH} \
         --log_dir ${OUTPUT_DIR} \
         --output_dir ${OUTPUT_DIR} \
-        --batch_size 40 \
+        --batch_size 16 \
         --num_sample 1 \
         --input_size ${input_size} \
         --short_side_size ${input_size} \

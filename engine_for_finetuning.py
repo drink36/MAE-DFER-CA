@@ -9,7 +9,8 @@ from timm.utils import accuracy, ModelEma
 import utils
 from scipy.special import softmax
 import pickle
-
+# calculate flops
+from fvcore.nn import FlopCountAnalysis, flop_count_table, flop_count_str
 def train_class_batch(model, samples, target, criterion):
     outputs = model(samples)
     loss = criterion(outputs, target)
@@ -55,7 +56,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         samples = samples.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
-
         if mixup_fn is not None:
             samples, targets = mixup_fn(samples, targets)
 
@@ -90,7 +90,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             # this attribute is added by timm on one optimizer (adahessian)
             is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
             loss /= update_freq
-            grad_norm = loss_scaler(loss, optimizer, clip_grad=max_norm,
+            loss_copy = loss.clone()
+            grad_norm = loss_scaler(loss_copy, optimizer, clip_grad=max_norm,
                                     parameters=model.parameters(), create_graph=is_second_order,
                                     update_grad=(data_iter_step + 1) % update_freq == 0)
             if (data_iter_step + 1) % update_freq == 0:
@@ -162,7 +163,7 @@ def validation_one_epoch(data_loader, model, device):
         with torch.cuda.amp.autocast():
             output = model(videos)
             loss = criterion(output, target)
-
+        #print(output)
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         output, target = output.cpu().detach().numpy(), target.cpu().detach().numpy()
         outputs.append(output)
@@ -210,7 +211,9 @@ def final_test(data_loader, model, device, file, save_feature=False):
     # switch to evaluation mode
     model.eval()
     final_result = []
-
+    test_flops = FlopCountAnalysis(model, torch.zeros((1, 3,16,160,160)).cuda())
+    print(flop_count_table(test_flops))
+    model.eval()
     # me: for saving feature in the last layer
     saved_features = {}
 
@@ -230,6 +233,8 @@ def final_test(data_loader, model, device, file, save_feature=False):
                 output, saved_feature = model(videos, save_feature=save_feature)
             else:
                 output = model(videos)
+                # calculate flops
+
             loss = criterion(output, target)
 
         for i in range(output.size(0)):

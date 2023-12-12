@@ -29,9 +29,8 @@ do
       MODEL_PATH="./saved/model/pretraining/${pretrain_dataset}/${model_dir}/checkpoint-${ckpt}.pth"
 
       # batch_size can be adjusted according to number of GPUs
-      OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=3,4,5 python -m torch.distributed.launch --nproc_per_node=3 \
-          --master_port 15356 \
-          run_class_finetuning.py \
+      OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0 python3 run_class_finetuning.py  \
+          --eval \
           --model vit_base_dim512_no_depth_patch16_${input_size} \
           --depth 16 \
           --data_set ${finetune_dataset^^} \
@@ -40,7 +39,7 @@ do
           --finetune ${MODEL_PATH} \
           --log_dir ${OUTPUT_DIR} \
           --output_dir ${OUTPUT_DIR} \
-          --batch_size 32 \
+          --batch_size 24 \
           --num_sample 1 \
           --input_size ${input_size} \
           --short_side_size ${input_size} \
@@ -56,6 +55,15 @@ do
           --test_num_segment 2 \
           --test_num_crop 2 \
           --attn_type local_global \
+          --lg_region_size 2 5 10 \
+          --lg_classify_token_type ${lg_classify_token_type} \
+          --num_workers 16 \
+          >${OUTPUT_DIR}/nohup.out 2>&1
+    done
+  done
+done
+echo "Done!"
+
           --lg_region_size 2 5 10 \
           --lg_classify_token_type ${lg_classify_token_type} \
           --num_workers 16 \

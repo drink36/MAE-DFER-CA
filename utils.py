@@ -12,7 +12,7 @@ from pathlib import Path
 import subprocess
 import torch
 import torch.distributed as dist
-from torch._six import inf
+from torch import inf
 import random
 
 from tensorboardX import SummaryWriter
@@ -345,7 +345,8 @@ class NativeScalerWithGradNormCount:
         self._scaler = torch.cuda.amp.GradScaler()
 
     def __call__(self, loss, optimizer, clip_grad=None, parameters=None, create_graph=False, update_grad=True):
-        self._scaler.scale(loss).backward(create_graph=create_graph)
+        create_graph_flag = create_graph
+        self._scaler.scale(loss).backward(create_graph=create_graph_flag)
         if update_grad:
             if clip_grad is not None:
                 assert parameters is not None
@@ -457,7 +458,8 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
                 if checkpoint['epoch'] != 'best':
                     args.start_epoch = checkpoint['epoch'] + 1
                 else:
-                    assert args.eval, f"Error: can not resume from 'best' checkpoint because checkpoint['epoch'] is not available. "
+                    args.start_epoch = 59
+                    # assert args.eval, f"Error: can not resume from 'best' checkpoint because checkpoint['epoch'] is not available. "
                 if hasattr(args, 'model_ema') and args.model_ema:
                     _load_checkpoint_for_ema(model_ema, checkpoint['model_ema'])
                 if 'scaler' in checkpoint:

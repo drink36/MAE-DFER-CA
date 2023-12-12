@@ -6,8 +6,10 @@ import torch.nn.functional as F
 from timm.models.layers import drop_path, to_2tuple, trunc_normal_
 from timm.models.registry import register_model
 from einops import rearrange, repeat
-
-
+from CA_block import resnet18_pos_attention
+# from PC_module import VisionTransformer_POS
+from torchvision.transforms import Resize
+from torchvision import transforms
 def _cfg(url='', **kwargs):
     return {
         'url': url,
@@ -290,11 +292,13 @@ class LGBlock(nn.Module):
                 )
 
             ## perform global (inter-region) self-attention
+            # change for fit single card
             if not self.no_second:
                 # messenger_tokens: representative tokens
                 messenger_tokens = rearrange(x[:,0], '(b n) c -> b n c', b=b) # attn on 'n' dim
-                messenger_tokens = messenger_tokens + self.drop_path(
-                    self.second_attn(self.second_attn_norm0(messenger_tokens))
+                messenger_tokens_copy=messenger_tokens.clone()
+                messenger_tokens = messenger_tokens_copy + self.drop_path(
+                    self.second_attn(self.second_attn_norm0(messenger_tokens_copy))
                 )
                 x[:,0] = rearrange(messenger_tokens, 'b n c -> (b n) c')
             else: # for usage in the third attn
@@ -350,7 +354,24 @@ class PatchEmbed(nn.Module):
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
         x = self.proj(x).flatten(2).transpose(1, 2)
         return x
-
+class PatchCaculate(nn.Module):
+    def __init__(self,num_frames=16):
+        super().__init__()
+        self.num_frames=num_frames
+        self.list=[]
+    def forward(self, x, **kwargs):
+        for i in range(len(x)):
+            # calculate the mean of each frame
+            x1 = torch.mean(x[i],dim=1)
+            # calculate the sum of each frame
+            x2 = torch.sum(x[i],dim=1)
+            x1 = x2-(x1*self.num_frames)
+            # assign x1 to x[i] # (B, C, H, W)
+            x[i]=x1
+        # get the sum of list
+        # (B, C, H, W) -> (C, B, H, W)
+        # reshape c as 24
+        return x
 # sin-cos position encoding
 # https://github.com/jadore801120/attention-is-all-you-need-pytorch/blob/master/transformer/Models.py#L31
 def get_sinusoid_encoding_table(n_position, d_hid): 
@@ -370,6 +391,7 @@ class VisionTransformer(nn.Module):
     """ Vision Transformer with support for patch or hybrid CNN input stage
     """
     def __init__(self, 
+                 pretrained_cfg=None,
                  img_size=224, 
                  patch_size=16, 
                  in_chans=3, 
@@ -398,6 +420,7 @@ class VisionTransformer(nn.Module):
                  lg_classify_token_type='org', lg_no_second=False, lg_no_third=False,
                  ):
         super().__init__()
+        self.num_frames = all_frames
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         self.tubelet_size = tubelet_size
@@ -483,9 +506,20 @@ class VisionTransformer(nn.Module):
 
         trunc_normal_(self.head.weight, std=.02)
         self.apply(self._init_weights)
-
         self.head.weight.data.mul_(init_scale)
         self.head.bias.data.mul_(init_scale)
+        # mmnet(CA block)
+        self.cablock=resnet18_pos_attention()
+        self.conv_act = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=90*2, kernel_size=3, stride=2,padding=1, bias=False,groups=1),
+            nn.BatchNorm2d(180),
+            nn.ReLU(inplace=True),
+
+           )
+        self.fc1 = nn.Linear(51200, 512)
+        # self.vit_pos=VisionTransformer_POS(img_size=10,
+        # patch_size=1, embed_dim=512, depth=2, num_heads=4, mlp_ratio=2, qkv_bias=True,norm_layer=partial(nn.LayerNorm, eps=1e-6),drop_path_rate=0.)
+        # self.resize=Resize([10,10])
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -518,6 +552,7 @@ class VisionTransformer(nn.Module):
             x = x + self.pos_embed.expand(B, -1, -1).type_as(x).to(x.device).clone().detach()
         x = self.pos_drop(x)
 
+
         if self.attn_type == 'local_global':
             # input: region partition
             nt, t = self.lg_num_region_size[0], self.lg_region_size[0]
@@ -530,11 +565,13 @@ class VisionTransformer(nn.Module):
             x = torch.cat([region_tokens, x], dim=2) # (b, nt*nh*nw, 1+thw, c)
             x = rearrange(x, 'b n s c -> (b n) s c') # s = 1 + thw
             # run through each block
+            x_copy = x.clone()
             for blk in self.blocks:
-                x = blk(x, b) # (b*n, s, c)
+                # got error here
+                x_copy = blk(x_copy, b) # (b*n, s, c)
 
-            x = rearrange(x, '(b n) s c -> b n s c', b=b) # s = 1 + thw
-            # token for final classification
+            x = rearrange(x_copy, '(b n) s c -> b n s c', b=b) # s = 1 + thw
+            # token for final classification 
             if self.lg_classify_token_type == 'region': # only use region tokens for classification
                 x = x[:,:,0] # (b, n, c)
             elif self.lg_classify_token_type == 'org': # only use original tokens for classification
@@ -543,9 +580,10 @@ class VisionTransformer(nn.Module):
                 x = rearrange(x, 'b n s c -> b (n s) c') # s = 1 + thw
 
         else:
+            x_copy=x.clone()
             for blk in self.blocks:
-                x = blk(x)
-
+                x_copy = blk(x_copy)
+            x = x_copy
         x = self.norm(x)
         if self.fc_norm is not None:
             # me: add frame-level prediction support
@@ -568,9 +606,32 @@ class VisionTransformer(nn.Module):
             return x[:, 0]
 
     def forward(self, x, save_feature=False):
+        # me : add CA block 
+        # make an tensor with (B, C, H, W)
+        x_c=torch.randn(len(x),3,160,160).cuda()
+        x2_c=torch.randn(len(x),3,160,160).cuda()
+        for i in range(len(x)):
+            # calculate the sum of each frame
+            x2 = torch.mean(x[i],dim=1)
+            # take first frame (C,B,H,W)
+            x1= rearrange(x[i], 'c b h w -> b c h w')[0]
+            x2_c[i]=x1
+            x1 = x2-x1
+            # assign x1 to x[i] # (B, C, H, W)
+            x_c[i]=x1
+        x1=self.conv_act(x_c)
+        # x2=rearrange(x[0], 'c b h w -> b c h w')
+        # POS =self.vit_pos(self.resize(x2_c)).transpose(1,2).view(x2_c.shape[0],512,10,10)
+        x1,_=self.cablock(x1) # 100352
+
+        x1= F.relu(self.fc1(x1))
+        
         x = self.forward_features(x)
         if save_feature:
             feature = x
+        # me: change for combine mmnet (cat or add)
+        x=x+x1
+        # x=torch.cat((x,x1),1)
         x = self.head(x)
         # me: add head activation function support
         x = self.head_activation_func(x)
@@ -594,7 +655,7 @@ def vit_base_patch16_160(pretrained=False, **kwargs):
     model.default_cfg = _cfg()
     return model
 
-
+# change for combine mmnet
 @register_model
 def vit_base_dim512_no_depth_patch16_160(pretrained=False, **kwargs):
     model = VisionTransformer(

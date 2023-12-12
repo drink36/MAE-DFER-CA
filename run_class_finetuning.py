@@ -23,6 +23,9 @@ from utils import  multiple_samples_collate
 import utils
 import modeling_finetune
 
+# Turn on cuda
+torch.cuda.set_device(0)
+torch.autograd.set_detect_anomaly(True) # for debugging
 
 def get_args():
     parser = argparse.ArgumentParser('VideoMAE fine-tuning and evaluation script for video classification', add_help=False)
@@ -494,7 +497,7 @@ def main(args, ds_init):
         assert model.gradient_accumulation_steps() == args.update_freq
     else:
         if args.distributed:
-            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
+            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True,broadcast_buffers=False)
             model_without_ddp = model.module
 
         optimizer = create_optimizer(
@@ -531,7 +534,8 @@ def main(args, ds_init):
     if args.eval:
         preds_file = os.path.join(args.output_dir, str(global_rank) + '.txt')
         test_stats = final_test(data_loader_test, model, device, preds_file, save_feature=args.save_feature)
-        torch.distributed.barrier()
+        #torch.distributed.barrier()
+        global_rank = 0
         if global_rank == 0:
             print("Start merging results...")
             final_top1 ,final_top5, pred_dict = merge(args.output_dir, num_tasks, args)
@@ -625,8 +629,8 @@ def main(args, ds_init):
     preds_file = os.path.join(args.output_dir, str(global_rank) + '.txt')
     test_stats = final_test(data_loader_test, model, device, preds_file, save_feature=args.save_feature)
 
-    torch.distributed.barrier()
-
+    # torch.distributed.barrier()
+    global_rank = 0
     if global_rank == 0:
         print("Start merging results...")
         # me: original merge
