@@ -24,7 +24,7 @@ Inspired by recent success of VideoMAE, MAE-DFER makes an early attempt to devis
 Inspired by the success of MMNET(Micro-expression), we changed the input of CA_Module to make it learn the difference between the first frame and each frame. Make sure we can learn the motion pattern features of whole videos.
 <p align="center">
   <img src="figs/CA_Module.png" width=100%> <br>
-  The architecture of LGI-Former.
+  The architecture of CA_Module.
 </p>
 Extensive experiments on *one* DFER datasets show that our MAE-DFER-CA *consistently* outperforms the MAE-DFER.
 
@@ -104,5 +104,5 @@ If you have any questions, please feel free to reach me out at `ooo910809@gmail.
 
 ## 👍 Acknowledgements
 
-This project is built upon [VideoMAE](https://github.com/MCG-NJU/VideoMAE), [MAE-DFER](https://github.com/sunlicai/MAE-DFER) and[MAE-DFER](https://github.com/sunlicai/MAE-DFER). Thanks for their great codebase.
+This project is built upon [VideoMAE](https://github.com/MCG-NJU/VideoMAE), [MAE-DFER](https://github.com/sunlicai/MAE-DFER) and [MMNET](https://github.com/muse1998/MMNet). Thanks for their great codebase.
 
