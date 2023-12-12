@@ -104,5 +104,5 @@ If you have any questions, please feel free to reach me out at `ooo910809@gmail.
 
 ## 👍 Acknowledgements
 
-This project is built upon [VideoMAE](https://github.com/MCG-NJU/VideoMAE) and [MAE-DFER](https://github.com/sunlicai/MAE-DFER). Thanks for their great codebase.
+This project is built upon [VideoMAE](https://github.com/MCG-NJU/VideoMAE), [MAE-DFER](https://github.com/sunlicai/MAE-DFER) and[MAE-DFER](https://github.com/sunlicai/MAE-DFER). Thanks for their great codebase.
 
