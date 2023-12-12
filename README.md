@@ -1,13 +1,13 @@
-# MAE-DFER: Efficient Masked Autoencoder for Self-supervised Dynamic Facial Expression Recognition (ACM MM 2023)
+# MAE-DFER-CA: Combination with Efficient Masked Autoencoder for Self-supervised Dynamic Facial Expression Recognition and CA_Module
 
-> University of Chinese Academy of Sciences & Institute of Automation, Chinese Academy of Sciences & Tsinghua University<br>
+> National Taiwan University of Science and Technology & Department of Computer Science and Information Engineering<br>
 
 ## 📰 News
 
 
 ## ✨ Overview
 
-Dynamic Facial Expression Recognition (DFER) is facing **supervised dillema**. On the one hand, current efforts in DFER focus on developing *various* deep supervised models, but only achieving *incremental* progress which is mainly attributed to the *longstanding lack* of large-scale high-quality datasets. On the other hand, due to the *ambiguity* and *subjectivity* in facial expression perception, acquiring large-scale high-quality DFER samples is pretty *time-consuming* and *labor-intensive*. Considering that there are massive unlabeled facial videos on the Internet, this work aims to **explore a new way** (i.e., self-supervised learning) which can fully exploit large-scale *unlabeled* data to largely advance the development of DFER.
+Dynamic Facial Expression Recognition (DFER) is facing **supervised dillema**. On the one hand, current efforts in DFER focus on developing *various* deep supervised models, but only achieving *incremental* progress which is mainly attributed to the *longstanding lack* of large-scale high-quality datasets. On the other hand, due to the *ambiguity* and *subjectivity* in facial expression perception, acquiring large-scale high-quality DFER samples is pretty *time-consuming* and *labor-intensive*. Considering that there are massive unlabeled facial videos on the Internet, this work aims to **explore a new way** (i.e., self-supervised learning) which can fully exploit large-scale *unlabeled* data to largely advance the development of DFER. We also added CA_Module to learn muscle motion between video frames. By learning motion pattern features, we can easily enhance performance.
 
 <p align="center">
   <img src="figs/Overview.png" width=50%> <br>
@@ -21,9 +21,12 @@ Inspired by recent success of VideoMAE, MAE-DFER makes an early attempt to devis
   The architecture of LGI-Former.
 </p>
 <!-- ![LGI-Former](figs/LGI-Former.png) -->
-
-Extensive experiments on *six* DFER datasets show that our MAE-DFER *consistently* outperforms the previous best supervised methods by *significant* margins (**\+5∼8%** UAR on three *in-the-wild* datasets and **\+7∼12%** WAR on three *lab-controlled* datasets), which demonstrates that it can learn *powerful* dynamic facial representations for DFER via large-scale self-supervised pre-training. We believe MAE-DFER **has paved a new way** for the advancement of DFER and can inspire more relevant research in this field and even other related tasks (e.g., dynamic micro-expression recognition and facial action unit detection).
-
+Inspired by the success of MMNET(Micro-expression), we changed the input of CA_Module to make it learn the difference between the first frame and each frame. Make sure we can learn the motion pattern features of whole videos.
+<p align="center">
+  <img src="figs/CA_Module.png" width=100%> <br>
+  The architecture of LGI-Former.
+</p>
+Extensive experiments on *one* DFER datasets show that our MAE-DFER-CA *consistently* outperforms the MAE-DFER.
 ## 🚀 Main Results
 
 ### ✨ FERV39k
