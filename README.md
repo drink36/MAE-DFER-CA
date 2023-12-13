@@ -26,7 +26,7 @@ Inspired by the success of MMNET(Micro-expression), we changed the input of CA_M
   <img src="figs/CA_Module.png" width=100%> <br>
   The architecture of CA_Module.
 </p>
-Extensive experiments on one DFER datasets show that our MAE-DFER-CA **consistently** outperforms the MAE-DFER.
+Extensive experiments on one DFER dataset show that our MAE-DFER-CA consistently outperforms the MAE-DFER.
 
 ## 🚀 Main Results
 
